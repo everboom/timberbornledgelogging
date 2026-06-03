@@ -1,12 +1,15 @@
 using Bindito.Core;
+using LedgeLogging.Game;
 
 namespace LedgeLogging
 {
     /// <summary>
-    /// Game-scope entry point for the Ledge Logging mod. Timberborn's mod loader
+    /// Game-scope DI configurator for the Ledge Logging mod. Timberborn's mod loader
     /// scans loaded assemblies for <see cref="Configurator"/> implementations and
-    /// runs <see cref="Configure"/> when the Game context is built; this is the
-    /// canonical entry point for a Timberborn mod (preferred over IModStarter).
+    /// runs <see cref="Configure"/> when the Game context is built. This is the seam
+    /// for <em>DI bindings</em> only; Harmony patches are applied earlier, from
+    /// <see cref="LedgeLoggingModStarter"/> (an <c>IModStarter</c>), before any
+    /// Bindito scope exists. This mod may register nothing here.
     /// </summary>
     [Context("Game")]
     internal sealed class LedgeLoggingConfigurator : Configurator
@@ -14,12 +17,14 @@ namespace LedgeLogging
         #region Configurator
 
         /// <summary>
-        /// Registers the mod's bindings. Empty scaffold for now — the Harmony
-        /// bootstrap (patching the lumberjack's tree-finding and reach) and any
-        /// supporting services will be wired here.
+        /// Registers the mod's Game-scope bindings. Binds <see cref="NavMeshServiceLocator"/>
+        /// as a loadable singleton so it can publish Game-scope navigation services to the
+        /// static Harmony patch code. The Harmony patches themselves are applied earlier,
+        /// from <see cref="LedgeLoggingModStarter"/>, before any Bindito scope exists.
         /// </summary>
         protected override void Configure()
         {
+            Bind<NavMeshServiceLocator>().AsSingleton();
         }
 
         #endregion

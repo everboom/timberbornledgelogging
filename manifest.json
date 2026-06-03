@@ -3,7 +3,7 @@
   "Version": "0.1.0.0",
   "Id": "SylvanGames.LedgeLogging",
   "MinimumGameVersion": "1.0.0.0",
-  "Description": "Lets lumberjacks cut trees on a neighbouring tile one level above or below them, without requiring a path up the cliff.",
+  "Description": "Lets workers clear trees and plants marked for removal on a neighbouring tile one level above or below them, without requiring a path up the cliff.",
   "RequiredMods": [
     {
       "Id": "Harmony",

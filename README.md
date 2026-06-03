@@ -14,6 +14,9 @@ offered to a lumberjack even when a beaver is standing right beneath (or above) 
 - `dotnet build` — builds and post-build-deploys `LedgeLogging.dll` + `manifest.json`
   to `%USERPROFILE%\Documents\Timberborn\Mods\LedgeLogging\`. Always Release.
 - `dotnet build -p:LedgeLoggingDeploy=false` — build without deploying.
+- `dotnet test` — runs the unit tests for the pure reachability core. These build
+  without a Timberborn install (the test project links the BCL-only source rather
+  than referencing the game-coupled mod assembly).
 
 Per-machine paths are not committed. Set `TimberbornInstallDir` via (highest
 precedence first): `-p:TimberbornInstallDir=<path>`, the
@@ -25,5 +28,7 @@ Optional deploy redirect: `LEDGELOGGING_DEPLOY_DIR`.
 
 ```
 LedgeLogging.slnx
-└── src/LedgeLogging   netstandard2.1 — the mod assembly (AssemblyName=LedgeLogging)
+├── src/LedgeLogging                       netstandard2.1 — the mod assembly (AssemblyName=LedgeLogging)
+│   └── Reachability                       BCL-only pure core (the unit-tested standing-tile search)
+└── tests/LedgeLogging.Reachability.Tests  MSTest — links and exercises the pure core
 ```

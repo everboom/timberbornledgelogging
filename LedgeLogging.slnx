@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/LedgeLogging/LedgeLogging.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LedgeLogging.Reachability.Tests/LedgeLogging.Reachability.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MSTest" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
+  </ItemGroup>
+
+  <!--
+    Link the mod's pure reachability source directly, rather than referencing
+    LedgeLogging.csproj. The mod project references the Timberborn install DLLs,
+    which need not exist on a machine that only runs the tests; these files use
+    the BCL only, so compiling them into the test assembly keeps the tests
+    buildable in isolation. This is the whole reason the logic was factored out.
+  -->
+  <ItemGroup>
+    <Compile Include="..\..\src\LedgeLogging\Reachability\TileCoord.cs" Link="Reachability\TileCoord.cs" />
+    <Compile Include="..\..\src\LedgeLogging\Reachability\NeighbourColumnSearch.cs" Link="Reachability\NeighbourColumnSearch.cs" />
+  </ItemGroup>
+
+</Project>
