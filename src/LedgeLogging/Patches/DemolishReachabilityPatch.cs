@@ -6,7 +6,7 @@ using Timberborn.Navigation;
 namespace LedgeLogging.Patches
 {
     /// <summary>
-    /// Patch 1 of 4 — reachability gate. <c>ReachableDemolishable.IsReachable(start, out
+    /// Patch 1 of 3 — reachability gate. <c>ReachableDemolishable.IsReachable(start, out
     /// distance)</c> decides whether a worker at <c>start</c> can reach a marked resource;
     /// <c>DemolishJobProvider</c> drops those it rejects. This postfix, when the direct
     /// road→terrain path to a <em>natural resource</em> fails, falls back to the ledge
@@ -56,12 +56,6 @@ namespace LedgeLogging.Patches
                 {
                     LedgeApproachStore.Set(reacher, new LedgeApproach(standingWorldCenter));
                 }
-                LedgeDiagnostics.Once($"gate-ok:{coordinates}", $"gate: accepted resource at {coordinates} (ledge distance {ledgeDistance:0.0}); stashed standing tile.");
-            }
-            else
-            {
-                LedgeDiagnostics.Once($"gate-no:{coordinates}", $"gate: resource at {coordinates} has NO reachable ledge standing tile from this worker.");
-                LedgeReachability.DiagnoseCandidates(start, coordinates);
             }
         }
 
@@ -69,7 +63,7 @@ namespace LedgeLogging.Patches
     }
 
     /// <summary>
-    /// Patch 2 of 4 — selection status. <c>ReachableDemolishable.IsUnreachable()</c> drives
+    /// Patch 2 of 3 — selection status. <c>ReachableDemolishable.IsUnreachable()</c> drives
     /// the "UnreachableObject" status shown when a marked resource is selected. This postfix
     /// clears that status for a natural resource whose ledge neighbour tile is on a district
     /// road spill — so the UI matches the relaxed reachability instead of wrongly warning.

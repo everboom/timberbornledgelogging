@@ -81,42 +81,6 @@ namespace LedgeLogging.Game
 
         #endregion
 
-        #region Diagnostics (temporary)
-
-        private static readonly (int Dx, int Dy)[] DiagnosticOffsets = { (1, 0), (-1, 0), (0, 1), (0, -1) };
-        private static readonly int[] DiagnosticLevels = { 0, -1, 1 };
-
-        /// <summary>
-        /// Logs, once per candidate, whether each ±1 neighbour tile of the resource is on the
-        /// navmesh, road→terrain reachable from <paramref name="start"/>, and on a district
-        /// road spill — to diagnose why a resource is rejected. Temporary.
-        /// </summary>
-        public static void DiagnoseCandidates(Accessible start, Vector3Int resourceCoordinates)
-        {
-            var navMesh = NavMeshServiceLocator.NavMeshService;
-            var districts = NavMeshServiceLocator.DistrictService;
-
-            LedgeDiagnostics.Once($"diag-start:{resourceCoordinates}",
-                $"diag {resourceCoordinates}: start.UnblockedSingleAccess={start.UnblockedSingleAccess.HasValue}");
-
-            foreach (var (dx, dy) in DiagnosticOffsets)
-            {
-                foreach (var dz in DiagnosticLevels)
-                {
-                    var coordinates = new Vector3Int(
-                        resourceCoordinates.x + dx, resourceCoordinates.y + dy, resourceCoordinates.z + dz);
-                    var onNavMesh = navMesh.IsOnNavMesh(coordinates);
-                    var world = CoordinateSystem.GridToWorldCentered(coordinates);
-                    var roadPath = onNavMesh && start.FindRoadToTerrainPath(world, out _);
-                    var roadSpill = onNavMesh && districts.IsOnInstantDistrictRoadSpill(world);
-                    LedgeDiagnostics.Once($"diag:{resourceCoordinates}:{coordinates}",
-                        $"  cand {coordinates}: navmesh={onNavMesh} roadPath={roadPath} roadSpill={roadSpill}");
-                }
-            }
-        }
-
-        #endregion
-
         #region Shared
 
         private static bool Search(

@@ -16,7 +16,6 @@ namespace LedgeLogging.Game
 
         private static INavMeshService? _navMeshService;
         private static IDistrictService? _districtService;
-        private static INavigationService? _navigationService;
 
         /// <summary>
         /// The Game-scope navmesh service. Throws if read before the Game scope has
@@ -34,29 +33,18 @@ namespace LedgeLogging.Game
             _districtService ?? throw new InvalidOperationException(
                 "[LedgeLogging] NavMeshServiceLocator read before Load(); no Game scope is active.");
 
-        /// <summary>
-        /// The Game-scope navigation service (used to build a building-respecting destination
-        /// to the standing tile). Throws if read before the Game scope has loaded.
-        /// </summary>
-        public static INavigationService NavigationService =>
-            _navigationService ?? throw new InvalidOperationException(
-                "[LedgeLogging] NavMeshServiceLocator read before Load(); no Game scope is active.");
-
         #endregion
 
         #region Construction
 
         private readonly INavMeshService _injectedNavMeshService;
         private readonly IDistrictService _injectedDistrictService;
-        private readonly INavigationService _injectedNavigationService;
 
         /// <summary>Injected by Bindito with the Game-scope navigation services.</summary>
-        public NavMeshServiceLocator(
-            INavMeshService navMeshService, IDistrictService districtService, INavigationService navigationService)
+        public NavMeshServiceLocator(INavMeshService navMeshService, IDistrictService districtService)
         {
             _injectedNavMeshService = navMeshService;
             _injectedDistrictService = districtService;
-            _injectedNavigationService = navigationService;
         }
 
         #endregion
@@ -68,7 +56,6 @@ namespace LedgeLogging.Game
         {
             _navMeshService = _injectedNavMeshService;
             _districtService = _injectedDistrictService;
-            _navigationService = _injectedNavigationService;
         }
 
         #endregion
