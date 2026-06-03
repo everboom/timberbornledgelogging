@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LedgeLogging/LedgeLogging.csproj" />
+  </Folder>
+</Solution>

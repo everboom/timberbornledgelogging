@@ -1,0 +1,22 @@
+<Project>
+
+  <!--
+    Template for Directory.Build.local.props. Copy this file to
+    Directory.Build.local.props (which is gitignored) and edit the values
+    for your machine.
+
+    Required:
+      TimberbornInstallDir  — root of your Timberborn install. Must contain
+                              Timberborn_Data\Managed\ with the game DLLs.
+
+    Optional:
+      LedgeLoggingDeployDir — where the build copies LedgeLogging.dll + manifest.
+                              Default: %USERPROFILE%\Documents\Timberborn\Mods\LedgeLogging
+  -->
+
+  <PropertyGroup>
+    <TimberbornInstallDir>C:\Path\To\Timberborn</TimberbornInstallDir>
+    <!-- <LedgeLoggingDeployDir>C:\Custom\Mods\LedgeLogging</LedgeLoggingDeployDir> -->
+  </PropertyGroup>
+
+</Project>

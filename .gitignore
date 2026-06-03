@@ -1,0 +1,45 @@
+## Build output
+bin/
+obj/
+
+## VS / Rider / VSCode
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Test results / coverage
+TestResults/
+coverage*.xml
+*.coverage
+*.coveragexml
+
+## NuGet
+*.nupkg
+*.snupkg
+.nuget/
+
+## OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+## Local overrides
+*.local.props
+.env
+
+## Claude Code per-machine settings
+.claude/
+
+## Project guidance for Claude Code — kept local, not published
+CLAUDE.md
+
+## Local diagnostic dumps (player.log captures, etc.)
+dump/
+
+## Local scratch — one-off scripts, smoke-test fixtures
+tmp/
