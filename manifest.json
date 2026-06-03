@@ -8,6 +8,10 @@
     {
       "Id": "Harmony",
       "MinimumVersion": "2.3.3"
+    },
+    {
+      "Id": "eMka.ModSettings",
+      "MinimumVersion": "1.0.13.0"
     }
   ]
 }

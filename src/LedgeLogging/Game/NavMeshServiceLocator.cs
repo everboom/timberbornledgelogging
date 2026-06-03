@@ -1,6 +1,8 @@
 using System;
+using LedgeLogging.Settings;
 using Timberborn.Navigation;
 using Timberborn.SingletonSystem;
+using Timberborn.TerrainSystem;
 
 namespace LedgeLogging.Game
 {
@@ -16,6 +18,8 @@ namespace LedgeLogging.Game
 
         private static INavMeshService? _navMeshService;
         private static IDistrictService? _districtService;
+        private static ITerrainService? _terrainService;
+        private static LedgeLoggingSettings? _settings;
 
         /// <summary>
         /// The Game-scope navmesh service. Throws if read before the Game scope has
@@ -33,18 +37,45 @@ namespace LedgeLogging.Game
             _districtService ?? throw new InvalidOperationException(
                 "[LedgeLogging] NavMeshServiceLocator read before Load(); no Game scope is active.");
 
+        /// <summary>
+        /// The player-chosen maximum number of terrain levels below a worker that a marked
+        /// resource may be cleared from, resolved live each read (so changing the setting takes
+        /// effect on the next reachability evaluation) and capped at the map height for "Any".
+        /// Throws if read before the Game scope has loaded.
+        /// </summary>
+        public static int MaxDepthBelow
+        {
+            get
+            {
+                if (_settings == null || _terrainService == null)
+                {
+                    throw new InvalidOperationException(
+                        "[LedgeLogging] NavMeshServiceLocator read before Load(); no Game scope is active.");
+                }
+                return _settings.MaxDepthBelow(_terrainService.Size.z);
+            }
+        }
+
         #endregion
 
         #region Construction
 
         private readonly INavMeshService _injectedNavMeshService;
         private readonly IDistrictService _injectedDistrictService;
+        private readonly ITerrainService _injectedTerrainService;
+        private readonly LedgeLoggingSettings _injectedSettings;
 
-        /// <summary>Injected by Bindito with the Game-scope navigation services.</summary>
-        public NavMeshServiceLocator(INavMeshService navMeshService, IDistrictService districtService)
+        /// <summary>Injected by Bindito with the Game-scope navigation services and mod settings.</summary>
+        public NavMeshServiceLocator(
+            INavMeshService navMeshService,
+            IDistrictService districtService,
+            ITerrainService terrainService,
+            LedgeLoggingSettings settings)
         {
             _injectedNavMeshService = navMeshService;
             _injectedDistrictService = districtService;
+            _injectedTerrainService = terrainService;
+            _injectedSettings = settings;
         }
 
         #endregion
@@ -56,6 +87,8 @@ namespace LedgeLogging.Game
         {
             _navMeshService = _injectedNavMeshService;
             _districtService = _injectedDistrictService;
+            _terrainService = _injectedTerrainService;
+            _settings = _injectedSettings;
         }
 
         #endregion

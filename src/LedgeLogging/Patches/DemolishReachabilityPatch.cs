@@ -10,7 +10,8 @@ namespace LedgeLogging.Patches
     /// distance)</c> decides whether a worker at <c>start</c> can reach a marked resource;
     /// <c>DemolishJobProvider</c> drops those it rejects. This postfix, when the direct
     /// road→terrain path to a <em>natural resource</em> fails, falls back to the ledge
-    /// search: if a navmesh-reachable standing tile (one column over, ±1 level) exists, the
+    /// search: if a navmesh-reachable standing tile exists (one column over, at the resource's
+    /// level or up to the player-configured number of levels above it — reaching down), the
     /// resource is accepted with that tile's distance.
     /// </summary>
     [HarmonyPatch(typeof(ReachableDemolishable), nameof(ReachableDemolishable.IsReachable),
@@ -48,7 +49,7 @@ namespace LedgeLogging.Patches
             // Stash the standing tile HERE, not at job assignment: DemolishJobProvider.GetJob
             // reserves and immediately drives navigation (which reads the reacher's
             // destination) within its own call, before any GetJob postfix would run.
-            if (LedgeReachability.TryFindStandingTile(start, coordinates, out var standingWorldCenter, out var ledgeDistance))
+            if (LedgeReachability.TryFindStandingTile(start, coordinates, NavMeshServiceLocator.MaxDepthBelow, out var standingWorldCenter, out var ledgeDistance))
             {
                 __result = true;
                 distance = ledgeDistance;
@@ -87,7 +88,7 @@ namespace LedgeLogging.Patches
             {
                 return;
             }
-            if (LedgeReachability.AnyNeighbourOnRoadSpill(coordinates))
+            if (LedgeReachability.AnyNeighbourOnRoadSpill(coordinates, NavMeshServiceLocator.MaxDepthBelow))
             {
                 __result = false;
             }

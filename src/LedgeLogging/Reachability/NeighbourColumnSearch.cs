@@ -3,31 +3,34 @@ using System;
 namespace LedgeLogging.Reachability
 {
     /// <summary>
-    /// Probe injected by the caller: can a beaver reach <paramref name="tile"/> on the
-    /// terrain navmesh from the lumberjack flag, and if so at what walking
-    /// <paramref name="distance"/>? Implemented game-side (e.g. via
-    /// <c>Accessible.FindTerrainPath</c>); abstracted here so the search stays pure.
+    /// Probe injected by the caller: can a worker reach <paramref name="tile"/> on the
+    /// terrain navmesh, and if so at what walking <paramref name="distance"/>? Implemented
+    /// game-side (e.g. via road→terrain pathfinding); abstracted here so the search stays pure.
     /// </summary>
     /// <param name="tile">Candidate standing tile.</param>
-    /// <param name="distance">Walking distance from the flag when reachable; otherwise undefined.</param>
-    /// <returns><see langword="true"/> if the tile is navmesh-reachable from the flag.</returns>
+    /// <param name="distance">Walking distance when reachable; otherwise undefined.</param>
+    /// <returns><see langword="true"/> if the tile is navmesh-reachable.</returns>
     public delegate bool TileReachabilityProbe(TileCoord tile, out float distance);
 
     /// <summary>
-    /// Pure search for a tile a lumberjack can stand on to cut a tree that the direct
-    /// path-to-trunk check rejected. Given the tree's column and level, it considers the
-    /// four orthogonally-adjacent columns at the tree's level and one level above/below
-    /// (a ±1 vertical reach), and returns the navmesh-reachable candidate closest to the
-    /// flag. This is the standing-tile half of the mod; the caller is responsible for then
-    /// sending the beaver to that tile and facing the tree.
+    /// Pure search for a tile a worker can stand on to clear a resource the direct
+    /// path-to-it check rejected. Given the resource's column and level, it considers the
+    /// four orthogonally-adjacent columns at the resource's level and up to
+    /// <c>maxDepthBelow</c> levels <em>above</em> it — i.e. the worker stands level with the
+    /// resource or higher and reaches <em>down</em> to it — and returns the navmesh-reachable
+    /// candidate closest to the worker. This is the standing-tile half of the mod; the caller
+    /// then sends the worker to that tile.
     /// </summary>
     /// <remarks>
     /// Game-independent by design (see the folder README): all Timberborn coupling — the
-    /// actual reachability test and coordinate conversion — lives behind
-    /// <see cref="TileReachabilityProbe"/>. Orthogonal-only adjacency matches Timberborn's
-    /// terrain navmesh connectivity rule (it connects orthogonal neighbours only); diagonals
-    /// are intentionally excluded. The search is fallback-only at the call site (run only
-    /// when the direct path fails), which bounds its cost to at most 12 probes per tree.
+    /// reachability test and coordinate conversion — lives behind <see cref="TileReachabilityProbe"/>.
+    /// <para>Downward-only: candidates are at the resource's level (<c>dz = 0</c>) and above
+    /// (<c>dz = +1 … +maxDepthBelow</c>), never below, so a worker can clear a resource on
+    /// lower ground but not one perched above it. Orthogonal-only adjacency matches the vanilla
+    /// terrain navmesh, which connects orthogonal neighbours only.</para>
+    /// <para>Fallback-only at the call site (run only when the direct path fails), and the
+    /// expensive probe is gated behind a cheap navmesh check, so cost stays bounded even at
+    /// large depths.</para>
     /// </remarks>
     public static class NeighbourColumnSearch
     {
@@ -42,29 +45,28 @@ namespace LedgeLogging.Reachability
             (1, 0), (-1, 0), (0, 1), (0, -1),
         };
 
-        /// <summary>
-        /// Level deltas to try, ordered by preference for tie-breaking: the tree's own level
-        /// first (most natural stance), then one below, then one above. The ±1 span is the
-        /// mod's whole point and must not be silently widened.
-        /// </summary>
-        private static readonly int[] LevelDeltas = { 0, -1, 1 };
-
         #endregion
 
         #region Search
 
         /// <summary>
-        /// Finds the navmesh-reachable standing tile closest to the flag from which the tree
-        /// at <paramref name="treeColumn"/> can be cut.
+        /// Finds the navmesh-reachable standing tile closest to the worker from which the
+        /// resource at <paramref name="resourceColumn"/> can be cleared.
         /// </summary>
-        /// <param name="treeColumn">The tree's tile coordinate (column in X/Y, level in Z).</param>
-        /// <param name="probe">Reachability test from the flag; see <see cref="TileReachabilityProbe"/>.</param>
+        /// <param name="resourceColumn">The resource's tile coordinate (column in X/Y, level in Z).</param>
+        /// <param name="maxDepthBelow">
+        /// How many terrain levels below the worker the resource may be — i.e. the largest
+        /// <c>dz</c> (standing level minus resource level) to consider. Must be ≥ 0; the worker's
+        /// standing tile is searched at the resource's level through <c>+maxDepthBelow</c> above it.
+        /// </param>
+        /// <param name="probe">Reachability test; see <see cref="TileReachabilityProbe"/>.</param>
         /// <param name="standingTile">The chosen standing tile, when one is found.</param>
-        /// <param name="distance">Walking distance from the flag to <paramref name="standingTile"/>, when found.</param>
+        /// <param name="distance">Walking distance to <paramref name="standingTile"/>, when found.</param>
         /// <returns><see langword="true"/> if a reachable standing tile was found.</returns>
         /// <exception cref="ArgumentNullException"><paramref name="probe"/> is <see langword="null"/>.</exception>
         public static bool TryFindStandingTile(
-            TileCoord treeColumn,
+            TileCoord resourceColumn,
+            int maxDepthBelow,
             TileReachabilityProbe probe,
             out TileCoord standingTile,
             out float distance)
@@ -80,12 +82,13 @@ namespace LedgeLogging.Reachability
 
             foreach (var (dx, dy) in OrthogonalOffsets)
             {
-                foreach (var dz in LevelDeltas)
+                // dz = 0 (level with the resource) up to +maxDepthBelow (worker above, reaching
+                // down). Ascending order means a shallower stance wins ties (strict '<' below),
+                // and the fixed enumeration order keeps the result deterministic.
+                for (var dz = 0; dz <= maxDepthBelow; dz++)
                 {
-                    var candidate = new TileCoord(treeColumn.X + dx, treeColumn.Y + dy, treeColumn.Z + dz);
+                    var candidate = new TileCoord(resourceColumn.X + dx, resourceColumn.Y + dy, resourceColumn.Z + dz);
 
-                    // Strict '<' keeps the first candidate on ties, so the fixed enumeration
-                    // order (offsets above, then LevelDeltas) makes the result deterministic.
                     if (probe(candidate, out var candidateDistance) && candidateDistance < distance)
                     {
                         standingTile = candidate;

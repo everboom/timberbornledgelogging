@@ -43,6 +43,19 @@
     <TimberbornManagedDir Condition="'$(TimberbornInstallDir)' != ''">$(TimberbornInstallDir)\Timberborn_Data\Managed</TimberbornManagedDir>
   </PropertyGroup>
 
+  <!--
+    eMka.ModSettings (Steam Workshop id 3283831040) provides the in-game settings panel.
+    Referenced compile-only (Core + Common); the runtime DLLs ship with the player's
+    installed ModSettings mod (declared in manifest.json RequiredMods). Resolution order:
+    -p:ModSettingsDir / LEDGELOGGING_MODSETTINGS_DIR env var → derived from the Steam
+    workshop folder next to the Timberborn install. Update the version-* segment if the
+    installed ModSettings build changes.
+  -->
+  <PropertyGroup Label="ModSettings paths">
+    <ModSettingsDir Condition="'$(ModSettingsDir)' == '' AND '$(LEDGELOGGING_MODSETTINGS_DIR)' != ''">$(LEDGELOGGING_MODSETTINGS_DIR)</ModSettingsDir>
+    <ModSettingsDir Condition="'$(ModSettingsDir)' == '' AND '$(TimberbornInstallDir)' != ''">$(TimberbornInstallDir)\..\..\workshop\content\1062090\3283831040\version-1.0\Scripts</ModSettingsDir>
+  </PropertyGroup>
+
   <PropertyGroup Label="Mod deploy paths">
     <LedgeLoggingDeployDir Condition="'$(LedgeLoggingDeployDir)' == '' AND '$(LEDGELOGGING_DEPLOY_DIR)' != ''">$(LEDGELOGGING_DEPLOY_DIR)</LedgeLoggingDeployDir>
     <LedgeLoggingDeployDir Condition="'$(LedgeLoggingDeployDir)' == ''">$(USERPROFILE)\Documents\Timberborn\Mods\LedgeLogging</LedgeLoggingDeployDir>

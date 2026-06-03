@@ -6,11 +6,12 @@ assembly) and deploys, with `manifest.json`, to the local Mods folder.
 ## Purpose
 
 Let a worker **clear/remove** (demolish) a natural resource — tree or plant —
-marked for destruction on an orthogonally-adjacent column whose surface is one
-terrain level above or below the worker's standing tile. Vanilla forbids this
-because the resource's tile isn't reachable on the navmesh, so the resource shows
-as "unreachable" and is never cleared. The mod extends the worker's *reach* (stand
-on a neighbour tile and clear across the ledge), not the navmesh itself.
+marked for destruction on an orthogonally-adjacent column that sits **below** the
+worker's standing tile (the worker reaches *down* across the ledge). Vanilla forbids
+this because the resource's tile isn't reachable on the navmesh, so the resource shows
+as "unreachable" and is never cleared. The mod extends the worker's *reach* (stand on a
+neighbour tile and clear across the ledge), not the navmesh itself. How many levels below
+is a player setting (`{1, 2, 3, Any}`, default `Any`) — see `Settings/`.
 
 ## Key types
 
@@ -26,8 +27,9 @@ on a neighbour tile and clear across the ledge), not the navmesh itself.
 
 - `Reachability/` — pure, BCL-only standing-tile search (unit-tested).
 - `Game/` — game-coupled glue: the reachability adapter, the approach store, and the
-  DI service locator.
-- `Patches/` — the four Harmony patches that implement the behaviour.
+  DI service locator (which also bridges the player setting to the static patches).
+- `Patches/` — the three Harmony patches that implement the behaviour.
+- `Settings/` — the `eMka.ModSettings` owner + configurator for the depth dropdown.
 
 ## How it fits together
 

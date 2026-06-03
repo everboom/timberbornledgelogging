@@ -22,6 +22,19 @@
   </ItemGroup>
 
   <!--
+    eMka.ModSettings for the in-game settings panel. Compile-only (Core = settings owner +
+    setting types, Common = LimitedString/range types); the runtime DLLs ship with the
+    player's installed ModSettings mod (declared in manifest.json RequiredMods), so we don't
+    bundle them. ModSettingsDir is resolved in Directory.Build.props.
+  -->
+  <ItemGroup Label="ModSettings" Condition="'$(ModSettingsDir)' != '' AND Exists('$(ModSettingsDir)\ModSettings.Core.dll')">
+    <Reference Include="$(ModSettingsDir)\ModSettings.Core.dll;$(ModSettingsDir)\ModSettings.Common.dll">
+      <Private>false</Private>
+      <SpecificVersion>false</SpecificVersion>
+    </Reference>
+  </ItemGroup>
+
+  <!--
     Game / engine references resolved from the local Timberborn install. These
     are NOT redistributed (Private=false) — Timberborn itself provides them at
     load time. Wildcards expand at item-evaluation time.

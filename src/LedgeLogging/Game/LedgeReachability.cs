@@ -15,7 +15,8 @@ namespace LedgeLogging.Game
     /// Demolishers reach work via roads then terrain, so the worker-specific probe uses
     /// <see cref="Accessible.FindRoadToTerrainPath(Vector3, out float)"/> (not the
     /// terrain-only <c>FindTerrainPath</c>). The UI "unreachable" status has no worker
-    /// context, so it uses a worker-independent district-road-spill probe instead.
+    /// context, so it uses a worker-independent district-road-spill probe instead. The
+    /// <c>maxDepthBelow</c> argument is the player-chosen downward reach (see the settings).
     /// </remarks>
     internal static class LedgeReachability
     {
@@ -23,17 +24,20 @@ namespace LedgeLogging.Game
 
         /// <summary>
         /// Tries to find a navmesh tile one orthogonal column from the resource and at most
-        /// one level away that the worker at <paramref name="start"/> can reach via
-        /// roads+terrain, to stand on while clearing the resource.
+        /// <paramref name="maxDepthBelow"/> levels above it (the worker stands level with the
+        /// resource or higher, reaching down) that the worker at <paramref name="start"/> can
+        /// reach via roads+terrain, to stand on while clearing the resource.
         /// </summary>
         /// <param name="start">The worker's accessible (pathfinding origin).</param>
         /// <param name="resourceCoordinates">The resource's grid coordinates (X/Y column, Z level).</param>
+        /// <param name="maxDepthBelow">Max terrain levels below the worker to allow (player setting).</param>
         /// <param name="standingWorldCenter">World centre of the chosen standing tile, when found.</param>
         /// <param name="distance">Walking distance from the worker to the standing tile, when found.</param>
         /// <returns><see langword="true"/> if a reachable standing tile was found.</returns>
         public static bool TryFindStandingTile(
             Accessible start,
             Vector3Int resourceCoordinates,
+            int maxDepthBelow,
             out Vector3 standingWorldCenter,
             out float distance)
         {
@@ -50,7 +54,7 @@ namespace LedgeLogging.Game
                 return start.FindRoadToTerrainPath(CoordinateSystem.GridToWorldCentered(coordinates), out candidateDistance);
             };
 
-            return Search(resourceCoordinates, probe, out standingWorldCenter, out distance);
+            return Search(resourceCoordinates, maxDepthBelow, probe, out standingWorldCenter, out distance);
         }
 
         #endregion
@@ -58,12 +62,12 @@ namespace LedgeLogging.Game
         #region Worker-independent reachability (UI status)
 
         /// <summary>
-        /// Whether any ±1-level orthogonal neighbour tile of the resource is on a district
-        /// road spill — i.e. some district's workers could stand there. Used to clear the
-        /// "unreachable" selection status; it has no specific worker, unlike
-        /// <see cref="TryFindStandingTile"/>.
+        /// Whether any downward-reach neighbour tile of the resource (within
+        /// <paramref name="maxDepthBelow"/> levels) is on a district road spill — i.e. some
+        /// district's workers could stand there. Used to clear the "unreachable" selection
+        /// status; it has no specific worker, unlike <see cref="TryFindStandingTile"/>.
         /// </summary>
-        public static bool AnyNeighbourOnRoadSpill(Vector3Int resourceCoordinates)
+        public static bool AnyNeighbourOnRoadSpill(Vector3Int resourceCoordinates, int maxDepthBelow)
         {
             var navMesh = NavMeshServiceLocator.NavMeshService;
             var districts = NavMeshServiceLocator.DistrictService;
@@ -76,7 +80,7 @@ namespace LedgeLogging.Game
                     && districts.IsOnInstantDistrictRoadSpill(CoordinateSystem.GridToWorldCentered(coordinates));
             };
 
-            return Search(resourceCoordinates, probe, out _, out _);
+            return Search(resourceCoordinates, maxDepthBelow, probe, out _, out _);
         }
 
         #endregion
@@ -85,12 +89,13 @@ namespace LedgeLogging.Game
 
         private static bool Search(
             Vector3Int resourceCoordinates,
+            int maxDepthBelow,
             TileReachabilityProbe probe,
             out Vector3 standingWorldCenter,
             out float distance)
         {
             var resourceColumn = new TileCoord(resourceCoordinates.x, resourceCoordinates.y, resourceCoordinates.z);
-            if (NeighbourColumnSearch.TryFindStandingTile(resourceColumn, probe, out var standingTile, out distance))
+            if (NeighbourColumnSearch.TryFindStandingTile(resourceColumn, maxDepthBelow, probe, out var standingTile, out distance))
             {
                 standingWorldCenter = CoordinateSystem.GridToWorldCentered(
                     new Vector3Int(standingTile.X, standingTile.Y, standingTile.Z));
