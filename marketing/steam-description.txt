@@ -22,9 +22,9 @@ Beavers refuse to clear a tree or plant they can't path right up to — and a si
 
 [h2]Pairs perfectly with Keystone[/h2]
 
-If you run [url=https://steamcommunity.com/sharedfiles/filedetails/?id=YOUR_KEYSTONE_ID][b]Keystone — Ecology for Timberborn[/b][/url], this mod is close to a must-have.
+I built this mod specifically to support my other mod, [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3726908702][b]Keystone — Ecology for Timberborn[/b][/url].
 
-Keystone brings the map to life: trees, greenery, and cross-faction flora spread on their own wherever the conditions are right — and "the right conditions" are very often [b]wet banks, shorelines, terraces, and cliffsides[/b], exactly the broken, multi-level terrain where vanilla beavers can't reach to clear anything.
+Keystone adds tons of vegetation and decorations to the map — trees, greenery, and cross-faction flora spread on their own wherever the conditions are right, and "the right conditions" are very often [b]wet banks, shorelines, terraces, and cliffsides[/b], exactly the broken, multi-level terrain where vanilla beavers can't reach to clear anything. With all that growth filling in your world, it's awfully convenient to be able to remove it a little more easily.
 
 [list]
 [*][b]Actually tidy the wild growth.[/b] Keystone makes plants appear on ledges and riverbanks all over the map. Ledge Logging is what lets your beavers [i]remove[/i] them when you want a clean build site or a clear view, instead of marking them and watching nothing happen.
