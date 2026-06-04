@@ -20,15 +20,9 @@ it across the ledge. Nothing else about beaver movement changes.
 
 ## What it does
 
-- A marked tree/plant is cleared if a worker can stand on an orthogonally-adjacent
-  column that is:
-  - **one level above** the resource — the worker reaches *down* to it, or
-  - **level with** it, or
-  - **one level below** it — the worker reaches *up* to it.
-- The **downward** reach (how many levels *below the worker* a resource may sit) is
-  a setting — see below. The **upward** reach is always fixed at one level.
-- Applies to natural resources only (trees and plants). Buildings and ruins keep
-  vanilla reachability.
+- Lets a worker clear a marked tree or plant on an adjacent column up to **one level
+  above** them, or up to a few levels **below** (configurable — see settings).
+- Trees and plants only; buildings and ruins are unaffected.
 
 ## Requirements
 
@@ -38,20 +32,15 @@ bundle them):
 | Mod | Why |
 | --- | --- |
 | **Harmony** | Runtime patching framework this mod is built on. |
-| **eMka.ModSettings** | Provides the in-game settings panel for the reach setting. |
+| **ModSettings** | Provides the in-game settings panel for the reach setting. |
 
 Both are declared in `manifest.json`, and Timberborn will warn you if they're
 missing.
 
 ## Installing
 
-1. Install **Harmony** and **eMka.ModSettings** (via the in-game mod manager / Steam
-   Workshop).
-2. Place `LedgeLogging.dll` and `manifest.json` together in:
-   ```
-   %USERPROFILE%\Documents\Timberborn\Mods\LedgeLogging\
-   ```
-3. Launch Timberborn and enable the mod in the mod manager if needed.
+Subscribe to Ledge Logging on the Steam Workshop and the game loads it on next
+launch. Make sure you're also subscribed to its required mods (above).
 
 ## Using it
 
@@ -61,7 +50,7 @@ walks to an adjacent tile and clears it across the ledge.
 
 ### Settings
 
-Open **eMka.ModSettings** (from the main-menu mod list or in-game **Options → Mods**)
+Open **ModSettings** (from the main-menu mod list or in-game **Options → Mods**)
 and find the **Ledge Logging** section:
 
 - **Maximum levels below** — `1` / `2` / `3` / `Any` (default **`1`**). How many
@@ -98,7 +87,7 @@ Per-machine paths are not committed. Set `TimberbornInstallDir` via (highest
 precedence first): `-p:TimberbornInstallDir=<path>`, the
 `LEDGELOGGING_TIMBERBORN_DIR` environment variable, or a gitignored
 `Directory.Build.local.props` (copy `Directory.Build.local.props.example`). The
-`eMka.ModSettings` reference resolves similarly via `ModSettingsDir` /
+ModSettings reference resolves similarly via `ModSettingsDir` /
 `LEDGELOGGING_MODSETTINGS_DIR`. Optional deploy redirect: `LEDGELOGGING_DEPLOY_DIR`.
 
 ### Layout
@@ -109,6 +98,6 @@ LedgeLogging.slnx
 │   ├── Reachability                       BCL-only pure core (the unit-tested standing-tile search)
 │   ├── Game                               game-coupled glue (navmesh probes, service locator)
 │   ├── Patches                            the three Harmony patches on the demolish system
-│   └── Settings                           the eMka.ModSettings reach setting
+│   └── Settings                           the ModSettings reach setting
 └── tests/LedgeLogging.Reachability.Tests  MSTest — links and exercises the pure core
 ```
