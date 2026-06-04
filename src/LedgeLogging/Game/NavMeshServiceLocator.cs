@@ -3,6 +3,7 @@ using LedgeLogging.Settings;
 using Timberborn.Navigation;
 using Timberborn.SingletonSystem;
 using Timberborn.TerrainSystem;
+using UnityEngine;
 
 namespace LedgeLogging.Game
 {
@@ -19,6 +20,8 @@ namespace LedgeLogging.Game
         private static INavMeshService? _navMeshService;
         private static IDistrictService? _districtService;
         private static ITerrainService? _terrainService;
+        private static RestrictedNodeMap? _restrictedNodeMap;
+        private static NodeIdService? _nodeIdService;
         private static LedgeLoggingSettings? _settings;
 
         /// <summary>
@@ -36,6 +39,23 @@ namespace LedgeLogging.Game
         public static IDistrictService DistrictService =>
             _districtService ?? throw new InvalidOperationException(
                 "[LedgeLogging] NavMeshServiceLocator read before Load(); no Game scope is active.");
+
+        /// <summary>
+        /// Whether <paramref name="coordinates"/> is a <em>restricted</em> navmesh node — one a
+        /// worker may path <em>through</em> but not stand on as a destination (e.g. a tile inside
+        /// a building). This is vanilla's own rule for valid work tiles, so a ledge standing tile
+        /// that is restricted must be rejected: vanilla would never send a worker to stand there.
+        /// Caller must ensure the tile is on the navmesh first. Throws if read before Load().
+        /// </summary>
+        public static bool IsRestricted(Vector3Int coordinates)
+        {
+            if (_restrictedNodeMap == null || _nodeIdService == null)
+            {
+                throw new InvalidOperationException(
+                    "[LedgeLogging] NavMeshServiceLocator read before Load(); no Game scope is active.");
+            }
+            return _restrictedNodeMap.IsNodeRestricted(_nodeIdService.GridToId(coordinates));
+        }
 
         /// <summary>
         /// The player-chosen maximum number of terrain levels below a worker that a marked
@@ -63,6 +83,8 @@ namespace LedgeLogging.Game
         private readonly INavMeshService _injectedNavMeshService;
         private readonly IDistrictService _injectedDistrictService;
         private readonly ITerrainService _injectedTerrainService;
+        private readonly RestrictedNodeMap _injectedRestrictedNodeMap;
+        private readonly NodeIdService _injectedNodeIdService;
         private readonly LedgeLoggingSettings _injectedSettings;
 
         /// <summary>Injected by Bindito with the Game-scope navigation services and mod settings.</summary>
@@ -70,11 +92,15 @@ namespace LedgeLogging.Game
             INavMeshService navMeshService,
             IDistrictService districtService,
             ITerrainService terrainService,
+            RestrictedNodeMap restrictedNodeMap,
+            NodeIdService nodeIdService,
             LedgeLoggingSettings settings)
         {
             _injectedNavMeshService = navMeshService;
             _injectedDistrictService = districtService;
             _injectedTerrainService = terrainService;
+            _injectedRestrictedNodeMap = restrictedNodeMap;
+            _injectedNodeIdService = nodeIdService;
             _injectedSettings = settings;
         }
 
@@ -88,6 +114,8 @@ namespace LedgeLogging.Game
             _navMeshService = _injectedNavMeshService;
             _districtService = _injectedDistrictService;
             _terrainService = _injectedTerrainService;
+            _restrictedNodeMap = _injectedRestrictedNodeMap;
+            _nodeIdService = _injectedNodeIdService;
             _settings = _injectedSettings;
         }
 

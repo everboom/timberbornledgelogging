@@ -8,6 +8,12 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <AppendTargetFrameworkToOutputPath>true</AppendTargetFrameworkToOutputPath>
+    <!--
+      Required so that members made public by the publicizer (see below) actually run
+      under the game's Mono runtime instead of throwing MethodAccessException/
+      FieldAccessException. The game still loads its own stock DLLs at runtime.
+    -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <!--
@@ -19,6 +25,22 @@
     <PackageReference Include="Lib.Harmony" Version="2.3.3">
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <!--
+    Publicize Timberborn.Navigation so we can read its internal RestrictedNodeMap /
+    NodeIdService. Those hold the navmesh's "restricted" flag — the node is walkable
+    *through* but not valid as a standing destination (e.g. inside a building). It is
+    exactly the signal vanilla uses to forbid a worker standing inside a building to
+    do work, which our ledge standing-tile search must also respect. Krafs.Publicizer
+    rewrites the *referenced* assembly to public at build time only (PrivateAssets=all,
+    build-time tool — nothing ships); we still reference the game DLLs Private=false and
+    bundle none of them. AllowUnsafeBlocks (above) is the runtime half. See the repo
+    notes on accessing internal Timberborn members.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Krafs.Publicizer" Version="2.2.1" PrivateAssets="all" />
+    <Publicize Include="Timberborn.Navigation" />
   </ItemGroup>
 
   <!--
