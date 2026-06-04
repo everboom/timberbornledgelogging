@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using HarmonyLib;
+using LedgeLogging.Patches;
 using Timberborn.ModManagerScene;
 using UnityEngine;
 
@@ -12,6 +13,14 @@ namespace LedgeLogging
     /// hook the game offers, and the correct place to apply Harmony patches so they
     /// are live before any downstream <c>ILoadableSingleton.Load()</c> fires.
     /// </summary>
+    /// <remarks>
+    /// Startup is fail-safe: the mod only becomes active (<see cref="LedgeLoggingState"/>)
+    /// after the patches verify. If <c>PatchAll</c> throws, applies the wrong number of
+    /// methods, or a reflection target fails to resolve, the starter rolls the patches back
+    /// (<see cref="Harmony.UnpatchAll(string)"/> — only this mod's) and leaves the game exactly
+    /// as vanilla, logging the reason. Since the patch bodies are no-ops while inactive, the
+    /// mod cannot half-install or crash the game on a botched startup.
+    /// </remarks>
     public sealed class LedgeLoggingModStarter : IModStarter
     {
         #region Constants
@@ -23,11 +32,11 @@ namespace LedgeLogging
         /// Number of methods this mod's patches are expected to apply. Bump this in
         /// lockstep with every <c>[HarmonyPatch]</c> added or removed. A mismatch
         /// against the count Harmony actually applies means a patch target was
-        /// renamed or removed by a game update — surfaced as a loud warning rather
-        /// than silent in-game breakage. The three patched methods are
-        /// <c>ReachableDemolishable.IsReachable</c> (gate + standing-tile stash),
-        /// <c>ReachableDemolishable.IsUnreachable</c> (UI status), and
-        /// <c>UncuttableReacher.Destination</c> (getter) — see the Patches folder.
+        /// renamed or removed by a game update — which now <em>disables</em> the mod
+        /// (after rollback), not merely warns, so it never runs half-patched. The three
+        /// patched methods are <c>ReachableDemolishable.IsReachable</c> (gate +
+        /// standing-tile stash), <c>ReachableDemolishable.IsUnreachable</c> (UI status),
+        /// and <c>UncuttableReacher.Destination</c> (getter) — see the Patches folder.
         /// </summary>
         public const int ExpectedPatchedMethodCount = 3;
 
@@ -36,8 +45,10 @@ namespace LedgeLogging
         #region IModStarter
 
         /// <summary>
-        /// Applies all Harmony patches in this assembly and verifies the applied
-        /// method count matches <see cref="ExpectedPatchedMethodCount"/>.
+        /// Applies and verifies this assembly's Harmony patches, activating the mod only if
+        /// everything checks out. Any failure — including an unexpected one in this method
+        /// itself — rolls the patches back and leaves the mod disabled; it never throws into
+        /// the game.
         /// </summary>
         /// <param name="modEnvironment">Mod environment supplied by the loader (unused).</param>
         public void StartMod(IModEnvironment modEnvironment)
@@ -45,33 +56,88 @@ namespace LedgeLogging
             var harmony = new Harmony(HarmonyId);
             try
             {
+                Install(harmony);
+            }
+            catch (Exception ex)
+            {
+                // Last-resort guard: a bug anywhere in our own startup path must never bubble
+                // out into the game. Roll back whatever applied and stay disabled.
+                Rollback(harmony, "unexpected error during startup", ex);
+            }
+        }
+
+        #endregion
+
+        #region Install / rollback
+
+        /// <summary>
+        /// Applies the patches and runs the three startup checks (applied, counted, reflection
+        /// resolves). On the first failed check it rolls back and returns; on success it arms
+        /// the mod.
+        /// </summary>
+        private static void Install(Harmony harmony)
+        {
+            // 1. Apply the patches.
+            try
+            {
                 harmony.PatchAll(typeof(LedgeLoggingModStarter).Assembly);
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[LedgeLogging] Harmony PatchAll threw: {ex}");
+                Rollback(harmony, "Harmony PatchAll threw", ex);
                 return;
             }
 
-            // No silent failure: count the methods WE patched and report it. A Timberborn
-            // update that renames/removes a target leaves PatchAll applying fewer methods
-            // than expected; that mismatch must surface as a loud warning, not silent
-            // in-game breakage. On success we still log a confirmation line — otherwise an
-            // empty log is indistinguishable from "the mod never ran".
+            // 2. Verify we patched exactly the methods we expect. A Timberborn update that
+            // renames or removes a target leaves PatchAll applying a different set; refuse to
+            // run half-patched.
             var ours = harmony.GetPatchedMethods()
                 .Where(m => m != null && Harmony.GetPatchInfo(m)?.Owners?.Contains(HarmonyId) == true)
                 .ToList();
             var patchedList = string.Join("\n", ours.Select(m => $"  {m.DeclaringType?.FullName}.{m.Name}"));
-            if (ours.Count == ExpectedPatchedMethodCount)
+            if (ours.Count != ExpectedPatchedMethodCount)
             {
-                Debug.Log(
-                    $"[LedgeLogging] Harmony applied {ours.Count} patch(es) (expected {ExpectedPatchedMethodCount}):\n{patchedList}");
+                Rollback(harmony,
+                    $"patch count mismatch (applied {ours.Count}, expected {ExpectedPatchedMethodCount} — "
+                        + $"a target may have been renamed in a game update):\n{patchedList}");
+                return;
             }
-            else
+
+            // 3. Verify the reflection targets the runtime patches depend on actually resolve,
+            // so a missing internal type/field surfaces here (loud, once) rather than throwing
+            // on the first in-game demolish.
+            try
             {
-                Debug.LogWarning(
-                    $"[LedgeLogging] Harmony patch count mismatch: applied {ours.Count}, expected " +
-                    $"{ExpectedPatchedMethodCount}. A target may have been renamed in a game update.\n{patchedList}");
+                UncuttableReacherAccess.EnsureResolved();
+            }
+            catch (Exception ex)
+            {
+                Rollback(harmony, "reflection target validation failed", ex);
+                return;
+            }
+
+            // 4. All checks passed — switch the patch bodies on.
+            LedgeLoggingState.MarkActive();
+            Debug.Log(
+                $"[LedgeLogging] Harmony applied {ours.Count} patch(es) (expected {ExpectedPatchedMethodCount}):\n{patchedList}");
+        }
+
+        /// <summary>
+        /// Disables the mod and removes any patches this Harmony id applied, so a failed or
+        /// partial install leaves the game exactly as vanilla. Safe to call when nothing was
+        /// patched, and only ever unpatches methods owned by <see cref="HarmonyId"/> — never
+        /// other mods' patches.
+        /// </summary>
+        private static void Rollback(Harmony harmony, string reason, Exception? error = null)
+        {
+            LedgeLoggingState.Disable($"could not install ({reason})", error);
+            try
+            {
+                harmony.UnpatchAll(HarmonyId);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[LedgeLogging] UnpatchAll during rollback threw: {ex}");
             }
         }
 

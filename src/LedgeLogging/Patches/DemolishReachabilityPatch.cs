@@ -1,3 +1,4 @@
+using System;
 using HarmonyLib;
 using LedgeLogging.Game;
 using Timberborn.Demolishing;
@@ -29,34 +30,45 @@ namespace LedgeLogging.Patches
         [HarmonyPostfix]
         private static void Postfix(ReachableDemolishable __instance, Accessible start, ref float distance, ref bool __result)
         {
-            if (!DemolishPatchSupport.TryGetNaturalResourceCoordinates(__instance, out var coordinates))
+            if (!LedgeLoggingState.IsActive)
             {
                 return;
             }
-            var reacher = __instance.GetComponent<DemolishableReacher>();
-
-            // Already reachable by the normal road→terrain path — make sure no stale ledge
-            // redirect lingers, then leave vanilla behaviour alone.
-            if (__result)
+            try
             {
-                if (reacher != null)
+                if (!DemolishPatchSupport.TryGetNaturalResourceCoordinates(__instance, out var coordinates))
                 {
-                    LedgeApproachStore.Clear(reacher);
+                    return;
                 }
-                return;
+                var reacher = __instance.GetComponent<DemolishableReacher>();
+
+                // Already reachable by the normal road→terrain path — make sure no stale ledge
+                // redirect lingers, then leave vanilla behaviour alone.
+                if (__result)
+                {
+                    if (reacher != null)
+                    {
+                        LedgeApproachStore.Clear(reacher);
+                    }
+                    return;
+                }
+
+                // Stash the standing tile HERE, not at job assignment: DemolishJobProvider.GetJob
+                // reserves and immediately drives navigation (which reads the reacher's
+                // destination) within its own call, before any GetJob postfix would run.
+                if (LedgeReachability.TryFindStandingTile(start, coordinates, NavMeshServiceLocator.MaxDepthBelow, out var standingWorldCenter, out var ledgeDistance))
+                {
+                    __result = true;
+                    distance = ledgeDistance;
+                    if (reacher != null)
+                    {
+                        LedgeApproachStore.Set(reacher, new LedgeApproach(standingWorldCenter));
+                    }
+                }
             }
-
-            // Stash the standing tile HERE, not at job assignment: DemolishJobProvider.GetJob
-            // reserves and immediately drives navigation (which reads the reacher's
-            // destination) within its own call, before any GetJob postfix would run.
-            if (LedgeReachability.TryFindStandingTile(start, coordinates, NavMeshServiceLocator.MaxDepthBelow, out var standingWorldCenter, out var ledgeDistance))
+            catch (Exception ex)
             {
-                __result = true;
-                distance = ledgeDistance;
-                if (reacher != null)
-                {
-                    LedgeApproachStore.Set(reacher, new LedgeApproach(standingWorldCenter));
-                }
+                LedgeLoggingState.Disable("runtime error in the demolish reachability gate patch", ex);
             }
         }
 
@@ -80,17 +92,28 @@ namespace LedgeLogging.Patches
         [HarmonyPostfix]
         private static void Postfix(ReachableDemolishable __instance, ref bool __result)
         {
-            if (!__result)
+            if (!LedgeLoggingState.IsActive)
             {
                 return;
             }
-            if (!DemolishPatchSupport.TryGetNaturalResourceCoordinates(__instance, out var coordinates))
+            try
             {
-                return;
+                if (!__result)
+                {
+                    return;
+                }
+                if (!DemolishPatchSupport.TryGetNaturalResourceCoordinates(__instance, out var coordinates))
+                {
+                    return;
+                }
+                if (LedgeReachability.AnyNeighbourOnRoadSpill(coordinates, NavMeshServiceLocator.MaxDepthBelow))
+                {
+                    __result = false;
+                }
             }
-            if (LedgeReachability.AnyNeighbourOnRoadSpill(coordinates, NavMeshServiceLocator.MaxDepthBelow))
+            catch (Exception ex)
             {
-                __result = false;
+                LedgeLoggingState.Disable("runtime error in the demolish unreachable-status patch", ex);
             }
         }
 

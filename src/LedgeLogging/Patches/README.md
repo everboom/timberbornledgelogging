@@ -3,8 +3,25 @@
 The Harmony patches that let a worker **clear/remove** (demolish) a natural resource on
 a ±1-level ledge. Applied by `LedgeLoggingModStarter.StartMod` via `PatchAll`. **Keep
 `LedgeLoggingModStarter.ExpectedPatchedMethodCount` equal to the number of distinct
-methods patched here** (currently 3) — the bootstrap warns loudly on a mismatch, which is
-how a game update renaming a target surfaces.
+methods patched here** (currently 3) — on a mismatch the bootstrap rolls the patches back
+and disables the mod, which is how a game update renaming a target surfaces.
+
+## Fail-safe contract
+
+Every postfix below follows the same shape, so a broken patch degrades to vanilla rather
+than crashing the game:
+
+1. **`if (!LedgeLoggingState.IsActive) return;`** first — the mod is inactive until the
+   starter verifies the install, and any failure flips it back off, so the body is a no-op
+   then.
+2. **`try { … } catch (Exception ex) { LedgeLoggingState.Disable(…, ex); }`** around the
+   work — an unexpected throw is logged once and turns the whole mod off for the session
+   (patch failures are deterministic; there is nothing to retry). Because these are
+   *postfixes*, swallowing the exception just lets the game's original result stand.
+
+The starter also calls `UncuttableReacherAccess.EnsureResolved()` at startup to force the
+reflection lookups (the `internal` type + private field) so a renamed game member fails at
+load — loud and once — instead of on the first in-game demolish.
 
 ## The three patches
 

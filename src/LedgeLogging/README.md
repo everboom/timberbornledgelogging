@@ -17,9 +17,18 @@ fixed at one level; how many levels **below** is a player setting (`{1, 2, 3, An
 ## Key types
 
 - `LedgeLoggingModStarter` — `IModStarter` entry point. Runs before any Bindito
-  scope exists; applies the assembly's Harmony patches (`PatchAll`) and warns
-  loudly if the applied method count drifts from `ExpectedPatchedMethodCount`
-  (keep that constant in sync as patches are added/removed).
+  scope exists; applies the assembly's Harmony patches (`PatchAll`), then verifies
+  the install (applied method count matches `ExpectedPatchedMethodCount`, and the
+  reflection targets resolve). On success it arms the mod (`LedgeLoggingState.MarkActive`);
+  on any failure it **rolls the patches back** (`UnpatchAll`, only this mod's) and stays
+  disabled — never half-patched. Keep `ExpectedPatchedMethodCount` in sync as patches
+  are added/removed.
+- `LedgeLoggingState` — the mod's on/off switch and one-shot failure reporter. The mod
+  starts **inactive**; every patch body checks `IsActive` and no-ops while off. The first
+  unexpected error (startup or runtime) calls `Disable`, which logs the cause to the
+  Player log **once** and turns the mod off for the session (patch failures are
+  deterministic — there is nothing to retry). This is how the mod "fails safe": it stops
+  affecting the game rather than throwing into it.
 - `LedgeLoggingConfigurator` — `[Context("Game")]` DI configurator. Binds
   `NavMeshServiceLocator` so the static patch code can reach Game-scope navigation
   services.

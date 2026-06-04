@@ -27,6 +27,19 @@ namespace LedgeLogging.Patches
         public static PositionDestinationFactory GetFactory(object reacher) =>
             (PositionDestinationFactory)FactoryField.GetValue(reacher);
 
+        /// <summary>
+        /// Forces resolution of the reacher type and its destination-factory field, throwing if
+        /// either is missing. Called once at startup (<see cref="LedgeLoggingModStarter"/>) so a
+        /// renamed/removed game member fails loudly there — and disables the mod — rather than
+        /// throwing on the first in-game demolish. Touching the members runs the field
+        /// initializers, whose null-coalescing throws surface a missing type/field.
+        /// </summary>
+        public static void EnsureResolved()
+        {
+            _ = ReacherType;
+            _ = FactoryField;
+        }
+
         #endregion
     }
 
@@ -62,12 +75,23 @@ namespace LedgeLogging.Patches
         [HarmonyPostfix]
         private static void Postfix(ReservableReacher __instance, ref IDestination __result)
         {
-            if (!LedgeApproachStore.TryGet(__instance, out var approach) || approach == null)
+            if (!LedgeLoggingState.IsActive)
             {
                 return;
             }
-            var factory = UncuttableReacherAccess.GetFactory(__instance);
-            __result = factory.Create(approach.StandingWorldCenter, LedgeStoppingDistance);
+            try
+            {
+                if (!LedgeApproachStore.TryGet(__instance, out var approach) || approach == null)
+                {
+                    return;
+                }
+                var factory = UncuttableReacherAccess.GetFactory(__instance);
+                __result = factory.Create(approach.StandingWorldCenter, LedgeStoppingDistance);
+            }
+            catch (Exception ex)
+            {
+                LedgeLoggingState.Disable("runtime error in the reacher destination patch", ex);
+            }
         }
 
         #endregion
