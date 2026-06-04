@@ -68,10 +68,6 @@ A worker sent to a ledge tile may path across an *impassable building* to get th
 This is the same off-road terrain pathing vanilla uses for any natural-resource
 removal, so it's accepted as base-game behaviour rather than worked around.
 
-> **About the name:** "Logging" is a historical misnomer — the mod started life
-> scoped to lumberjack cutting, but it's really about **removal via the Mark for
-> Destruction tool**. The id (`SylvanGames.LedgeLogging`) is kept for compatibility.
-
 ## Building from source
 
 Code-only Harmony mod — no Unity assets or SDK round-trip.

@@ -1,0 +1,51 @@
+[h1]Ledge Logging[/h1]
+
+Beavers refuse to clear a tree or plant they can't path right up to — and a single one-tile step up or down a cliff is impassable in Timberborn. So anything marked on a ledge, a terrace edge, or the lip of a dig site shows up as [i]"unreachable"[/i] and just sits there, even with a beaver standing right next to it.
+
+[b]Ledge Logging fixes that.[/b] A worker now walks to a normal, reachable tile [b]next to[/b] the resource and clears it across the ledge — no stairs, ramps, or scaffolding built just to delete a tree you were about to remove anyway. It relaxes only the worker's [i]reach[/i]; nothing else about beaver movement or pathfinding changes.
+
+[hr][/hr]
+
+[h2]What it does[/h2]
+[list]
+[*]Lets a worker clear a marked tree or plant on an adjacent column up to [b]one level above[/b] them, or up to a few levels [b]below[/b] (configurable).
+[*]Trees and plants only — buildings and ruins are untouched.
+[/list]
+
+[h2]How to use it[/h2]
+[list]
+[*]Just play. Use the [b]Mark for Destruction[/b] tool on a tree or plant on a ledge, and a worker will go clear it instead of leaving it stranded.
+[*]Open [b]Mod Settings[/b] (main-menu mod list, or in-game Options → Mods) → [b]Ledge Logging[/b] to set [b]Maximum levels below[/b] — [b]1 / 2 / 3 / Any[/b] (default [b]1[/b]). This is how far [i]down[/i] a worker may reach; reaching one level [i]up[/i] is always allowed. The default gives a tidy symmetric one-up / one-down reach; bump it up to clear deep into quarries and canyon walls.
+[/list]
+
+[hr][/hr]
+
+[h2]Pairs perfectly with Keystone[/h2]
+
+If you run [url=https://steamcommunity.com/sharedfiles/filedetails/?id=YOUR_KEYSTONE_ID][b]Keystone — Ecology for Timberborn[/b][/url], this mod is close to a must-have.
+
+Keystone brings the map to life: trees, greenery, and cross-faction flora spread on their own wherever the conditions are right — and "the right conditions" are very often [b]wet banks, shorelines, terraces, and cliffsides[/b], exactly the broken, multi-level terrain where vanilla beavers can't reach to clear anything.
+
+[list]
+[*][b]Actually tidy the wild growth.[/b] Keystone makes plants appear on ledges and riverbanks all over the map. Ledge Logging is what lets your beavers [i]remove[/i] them when you want a clean build site or a clear view, instead of marking them and watching nothing happen.
+[*][b]Keep cliff faces and quarry walls clear.[/b] Set the downward reach to [b]Any[/b] and a single worker on the rim can clear self-seeded growth all the way down a canyon or dig site.
+[*][b]Less terrain busywork.[/b] No more cutting temporary stairs into a cliff just to delete a birch Keystone grew on a ledge two tiles below you.
+[/list]
+
+Sculpt the land, let Keystone fill it with life — and use Ledge Logging to groom the parts your beavers otherwise couldn't touch.
+
+[hr][/hr]
+
+[h2]Compatibility[/h2]
+[list]
+[*][b]Game version:[/b] Timberborn 1.0
+[*][b]Required mods[/b] (installed automatically as Workshop dependencies): [b]Harmony[/b], [b]Mod Settings[/b]
+[*][b]All factions.[/b] Standard Harmony mod — coexists with most other mods, Keystone included.
+[*][b]Saves:[/b] safe to add or remove at any time; it only changes whether a marked ledge resource is considered reachable.
+[/list]
+
+[hr][/hr]
+
+[h2]Open source[/h2]
+
+Ledge Logging is free and open source. Browse the code, file a bug, or suggest a feature at [url=https://github.com/everboom/timberbornledgelogging][b]github.com/everboom/timberbornledgelogging[/b][/url].
