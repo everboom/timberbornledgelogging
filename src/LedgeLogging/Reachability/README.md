@@ -17,18 +17,19 @@ conversion — is injected through the `TileReachabilityProbe` delegate by the g
 - `TileReachabilityProbe` — delegate the caller supplies: "is this tile reachable, and at
   what walking distance?" The single seam to the game.
 - `NeighbourColumnSearch` — `TryFindStandingTile(resourceColumn, maxDepthBelow, probe, …)`:
-  searches the four orthogonally-adjacent columns at the resource's level and up to
-  `maxDepthBelow` levels above it, and returns the reachable candidate closest to the worker.
+  searches the four orthogonally-adjacent columns one level below the resource (fixed up
+  reach), at its level, and up to `maxDepthBelow` levels above it, returning the reachable
+  candidate closest to the worker.
 
 ## Design notes
 
 - **Orthogonal only.** Matches the vanilla terrain navmesh, which connects orthogonal
   neighbours only. No diagonal stances.
-- **Downward only, bounded by `maxDepthBelow`.** Candidates are at the resource's level
-  (`dz = 0`) through `+maxDepthBelow` *above* it (worker stands level or higher and reaches
-  down). Never below — a worker can clear a resource on lower ground but not one perched
-  above it. `maxDepthBelow` is the player setting ("Any" → map height); the search never
-  widens beyond it.
+- **Up fixed at one, down configurable.** A worker can clear a resource up to **one level
+  above** it (fixed; standing-tile `dz = -1`) and up to **`maxDepthBelow` levels below** it
+  (standing-tile `dz = +1 … +maxDepthBelow`), plus same-level. `maxDepthBelow` is the player
+  setting (`{1,2,3,Any}`; "Any" → map height; default 1, which reproduces the original ±1).
+  The upward reach never widens beyond one.
 - **Fallback-only cost.** The caller runs this only when the direct path fails; the
   expensive probe is gated behind a cheap navmesh check at the call site, so cost stays
   bounded (4 columns × `maxDepthBelow + 1` candidates, most cheap misses).

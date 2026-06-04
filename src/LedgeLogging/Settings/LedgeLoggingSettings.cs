@@ -24,10 +24,11 @@ namespace LedgeLogging.Settings
 
         /// <summary>
         /// Maximum terrain levels below the worker that a marked resource may be cleared from,
-        /// as a dropdown of <see cref="DepthValues"/> ("1"/"2"/"3"/"Any"). Default "Any".
+        /// as a dropdown of <see cref="DepthValues"/> ("1"/"2"/"3"/"Any"). Default "1" (which,
+        /// with the always-on one-level upward reach, reproduces the original ±1 behaviour).
         /// </summary>
         public LimitedStringModSetting MaxDepthBelowSetting { get; } =
-            new(defaultOptionIndex: 3, // "Any"
+            new(defaultOptionIndex: 0, // "1"
                 new List<NonLocalizedLimitedStringModSettingValue>
                 {
                     new(DepthValues.One),
@@ -38,7 +39,8 @@ namespace LedgeLogging.Settings
                 ModSettingDescriptor
                     .Create("Maximum levels below")
                     .SetTooltip("How many terrain levels below a worker it may reach down to clear a "
-                        + "marked tree or plant. 'Any' allows clearing from any reachable height above the resource."));
+                        + "marked tree or plant. Reaching one level up is always allowed regardless. "
+                        + "'Any' allows clearing from any reachable height above the resource."));
 
         #endregion
 

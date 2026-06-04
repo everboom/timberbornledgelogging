@@ -23,10 +23,11 @@ namespace LedgeLogging.Game
         #region Worker-specific search (finder gate / assignment)
 
         /// <summary>
-        /// Tries to find a navmesh tile one orthogonal column from the resource and at most
-        /// <paramref name="maxDepthBelow"/> levels above it (the worker stands level with the
-        /// resource or higher, reaching down) that the worker at <paramref name="start"/> can
-        /// reach via roads+terrain, to stand on while clearing the resource.
+        /// Tries to find a navmesh tile one orthogonal column from the resource — one level
+        /// below it (the worker reaches <em>up</em>; a fixed one-level allowance), level with
+        /// it, or up to <paramref name="maxDepthBelow"/> levels above it (the worker reaches
+        /// <em>down</em>) — that the worker at <paramref name="start"/> can reach via
+        /// roads+terrain, to stand on while clearing the resource.
         /// </summary>
         /// <param name="start">The worker's accessible (pathfinding origin).</param>
         /// <param name="resourceCoordinates">The resource's grid coordinates (X/Y column, Z level).</param>
@@ -62,10 +63,11 @@ namespace LedgeLogging.Game
         #region Worker-independent reachability (UI status)
 
         /// <summary>
-        /// Whether any downward-reach neighbour tile of the resource (within
-        /// <paramref name="maxDepthBelow"/> levels) is on a district road spill — i.e. some
-        /// district's workers could stand there. Used to clear the "unreachable" selection
-        /// status; it has no specific worker, unlike <see cref="TryFindStandingTile"/>.
+        /// Whether any reach neighbour tile of the resource — one level below it (fixed up
+        /// reach), level with it, or within <paramref name="maxDepthBelow"/> levels above it
+        /// (down reach) — is on a district road spill, i.e. some district's workers could stand
+        /// there. Used to clear the "unreachable" selection status; it has no specific worker,
+        /// unlike <see cref="TryFindStandingTile"/>.
         /// </summary>
         public static bool AnyNeighbourOnRoadSpill(Vector3Int resourceCoordinates, int maxDepthBelow)
         {

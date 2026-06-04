@@ -4,11 +4,14 @@ using Timberborn.ReservableSystem;
 namespace LedgeLogging.Game
 {
     /// <summary>
-    /// Carries the ledge-cut standing tile from the assignment patch (which knows the
-    /// flag and tree) to the reacher patches (which drive navigation and arrival).
-    /// Keyed by the tree's <see cref="ReservableReacher"/> instance — there is one per
-    /// tree, and a tree is reserved by at most one beaver at a time, so a single entry
-    /// per reacher suffices. Entries are evicted automatically when the tree is collected.
+    /// Carries the ledge standing tile from the reachability gate patch (which knows the
+    /// worker and resource) to the reacher patch (which drives navigation). The stash happens
+    /// in the gate, not at job assignment: <c>DemolishJobProvider.GetJob</c> reserves and
+    /// immediately reads the reacher's destination within its own call, before any assignment
+    /// postfix would run. Keyed by the resource's <see cref="ReservableReacher"/> instance —
+    /// there is one per resource, and a resource is reserved by at most one beaver at a time,
+    /// so a single entry per reacher suffices. Entries are evicted automatically when the
+    /// resource is collected.
     /// </summary>
     internal static class LedgeApproachStore
     {
@@ -20,7 +23,7 @@ namespace LedgeLogging.Game
 
         #region Operations
 
-        /// <summary>Records (or replaces) the ledge approach for a tree's reacher.</summary>
+        /// <summary>Records (or replaces) the ledge approach for a resource's reacher.</summary>
         public static void Set(ReservableReacher reacher, LedgeApproach approach)
         {
             Approaches.AddOrUpdate(reacher, approach);

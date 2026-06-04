@@ -10,9 +10,9 @@ namespace LedgeLogging.Patches
     /// distance)</c> decides whether a worker at <c>start</c> can reach a marked resource;
     /// <c>DemolishJobProvider</c> drops those it rejects. This postfix, when the direct
     /// road→terrain path to a <em>natural resource</em> fails, falls back to the ledge
-    /// search: if a navmesh-reachable standing tile exists (one column over, at the resource's
-    /// level or up to the player-configured number of levels above it — reaching down), the
-    /// resource is accepted with that tile's distance.
+    /// search: if a navmesh-reachable standing tile exists (one column over, up to one level
+    /// below the resource — reaching up — or up to the player-configured number of levels above
+    /// it — reaching down), the resource is accepted with that tile's distance.
     /// </summary>
     [HarmonyPatch(typeof(ReachableDemolishable), nameof(ReachableDemolishable.IsReachable),
         new[] { typeof(Accessible), typeof(float) },

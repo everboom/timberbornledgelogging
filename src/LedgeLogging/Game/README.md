@@ -15,7 +15,8 @@ in-game, not unit-tested.
     `IDistrictService.IsOnInstantDistrictRoadSpill`.
 - `LedgeApproach` — the chosen standing tile's world centre for one assignment.
 - `LedgeApproachStore` — a `ConditionalWeakTable<ReservableReacher, LedgeApproach>` that
-  carries the approach from the assignment patch to the reacher patch. Keyed per resource
+  carries the approach from the reachability gate patch to the reacher patch (the stash
+  happens in the gate, not at job assignment — see the type's doc). Keyed per resource
   (one reacher per resource; one worker reserves it at a time).
 - `NavMeshServiceLocator` — an `ILoadableSingleton` that publishes Game-scope DI services
   (`INavMeshService`, `IDistrictService`) to static fields, since the patch methods are

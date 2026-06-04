@@ -39,13 +39,6 @@ namespace LedgeLogging.Reachability
 
         #endregion
 
-        #region Operations
-
-        /// <summary>Returns this coordinate's column with the level replaced by <paramref name="z"/>.</summary>
-        public TileCoord WithZ(int z) => new TileCoord(X, Y, z);
-
-        #endregion
-
         #region Equality
 
         /// <inheritdoc/>

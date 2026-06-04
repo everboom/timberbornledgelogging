@@ -8,8 +8,9 @@ own, so it's the only extra mod players need beyond Harmony.
 ## Key types
 
 - `LedgeLoggingSettings` — a `ModSettingsOwner` exposing one dropdown,
-  **"Maximum levels below" `{1, 2, 3, Any}`** (default `Any`): how many terrain levels
-  *below* a worker a marked tree/plant may be cleared from. Uses the non-localized option
+  **"Maximum levels below" `{1, 2, 3, Any}`** (default `1`): how many terrain levels
+  *below* a worker a marked tree/plant may be cleared from. The *upward* reach is fixed at
+  one level (not a setting), so the default reproduces the original ±1. Uses the non-localized option
   and descriptor APIs (`NonLocalizedLimitedStringModSettingValue`, `ModSettingDescriptor.Create`),
   so the mod ships **no localization file**. `MaxDepthBelow(mapHeight)` resolves the choice
   to an int (`Any` → map height, the search's cap).

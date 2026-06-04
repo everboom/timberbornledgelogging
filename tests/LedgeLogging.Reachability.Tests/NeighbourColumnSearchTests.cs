@@ -8,8 +8,9 @@ namespace LedgeLogging.Reachability.Tests
     /// <summary>
     /// Unit tests for <see cref="NeighbourColumnSearch"/> — the pure standing-tile search.
     /// The game's reachability test is faked with an in-memory probe, so these pin the
-    /// search's contract: orthogonal-only, downward-only, bounded by <c>maxDepthBelow</c>,
-    /// nearest-reachable, deterministic.
+    /// search's contract: orthogonal-only; a fixed one-level <em>upward</em> reach
+    /// (<c>dz = -1</c>); a configurable <em>downward</em> reach (<c>dz = 0 … +maxDepthBelow</c>);
+    /// nearest-reachable; deterministic.
     /// </summary>
     [TestClass]
     public sealed class NeighbourColumnSearchTests
@@ -42,7 +43,7 @@ namespace LedgeLogging.Reachability.Tests
         [TestMethod]
         public void TryFindStandingTile_ReturnsSameLevelNeighbour_WhenOnlyItIsReachable()
         {
-            // Arrange — the worker stands level with the resource (dz = 0), adjacent.
+            // Arrange — worker level with the resource (dz = 0).
             var expected = new TileCoord(6, 5, 3);
             var (probe, _) = MakeProbe(new Dictionary<TileCoord, float> { [expected] = 2f });
 
@@ -56,10 +57,26 @@ namespace LedgeLogging.Reachability.Tests
         }
 
         [TestMethod]
+        public void TryFindStandingTile_ReturnsNeighbourBelowTheResource_ReachingUp()
+        {
+            // Arrange — the fixed upward reach: worker stands one level BELOW the resource
+            // (z=2), i.e. the resource is one level above the worker. Always available.
+            var expected = new TileCoord(6, 5, 2);
+            var (probe, _) = MakeProbe(new Dictionary<TileCoord, float> { [expected] = 4f });
+
+            // Act — even at the minimum downward setting.
+            var found = NeighbourColumnSearch.TryFindStandingTile(Resource, maxDepthBelow: 1, probe, out var tile, out var distance);
+
+            // Assert
+            Assert.IsTrue(found);
+            Assert.AreEqual(expected, tile);
+            Assert.AreEqual(4f, distance);
+        }
+
+        [TestMethod]
         public void TryFindStandingTile_ReturnsNeighbourAboveTheResource_ReachingDown()
         {
-            // Arrange — only the tile one level ABOVE the resource is reachable (worker stands
-            // at z=4, resource at z=3 → resource one level below the worker).
+            // Arrange — worker one level above the resource (z=4); resource one below the worker.
             var expected = new TileCoord(6, 5, 4);
             var (probe, _) = MakeProbe(new Dictionary<TileCoord, float> { [expected] = 7f });
 
@@ -75,7 +92,7 @@ namespace LedgeLogging.Reachability.Tests
         [TestMethod]
         public void TryFindStandingTile_ReturnsDeepNeighbour_WithinMaxDepth()
         {
-            // Arrange — resource three levels below the worker (dz = 3), allowed by maxDepthBelow 3.
+            // Arrange — resource three levels below the worker (dz = +3), allowed by maxDepthBelow 3.
             var expected = new TileCoord(5, 6, 6);
             var (probe, _) = MakeProbe(new Dictionary<TileCoord, float> { [expected] = 9f });
 
@@ -96,7 +113,7 @@ namespace LedgeLogging.Reachability.Tests
             {
                 [new TileCoord(6, 5, 3)] = 5f,
                 [new TileCoord(4, 5, 5)] = 2f, // nearest
-                [new TileCoord(5, 6, 4)] = 9f,
+                [new TileCoord(5, 6, 2)] = 9f,
             });
 
             // Act
@@ -115,7 +132,7 @@ namespace LedgeLogging.Reachability.Tests
         [TestMethod]
         public void TryFindStandingTile_ReturnsFalse_WhenNothingReachable()
         {
-            // Arrange — maxDepthBelow 2 → levels dz 0,1,2 over 4 columns = 12 candidates.
+            // Arrange — maxDepthBelow 2 → dz in {-1, 0, 1, 2} over 4 columns = 16 candidates.
             var (probe, queried) = MakeProbe(new Dictionary<TileCoord, float>());
 
             // Act
@@ -123,7 +140,7 @@ namespace LedgeLogging.Reachability.Tests
 
             // Assert
             Assert.IsFalse(found);
-            Assert.HasCount(12, queried, "4 columns x (maxDepthBelow + 1) levels should all be probed.");
+            Assert.HasCount(16, queried, "4 columns x (maxDepthBelow + 2) levels should all be probed.");
         }
 
         #endregion
@@ -131,28 +148,28 @@ namespace LedgeLogging.Reachability.Tests
         #region Search shape
 
         [TestMethod]
-        public void TryFindStandingTile_ProbesExactly_TheOrthogonalColumnsAtLevelThroughMaxDepthAbove()
+        public void TryFindStandingTile_ProbesExactly_OneUp_Level_AndDownThroughMaxDepth()
         {
-            // Arrange — maxDepthBelow 1 → dz in {0, +1} over the 4 orthogonal columns.
+            // Arrange — maxDepthBelow 1 → dz in {-1, 0, +1} (z 2/3/4) over the 4 orthogonal columns.
             var (probe, queried) = MakeProbe(new Dictionary<TileCoord, float>());
             var expected = new HashSet<TileCoord>
             {
-                new(6, 5, 3), new(6, 5, 4),
-                new(4, 5, 3), new(4, 5, 4),
-                new(5, 6, 3), new(5, 6, 4),
-                new(5, 4, 3), new(5, 4, 4),
+                new(6, 5, 2), new(6, 5, 3), new(6, 5, 4),
+                new(4, 5, 2), new(4, 5, 3), new(4, 5, 4),
+                new(5, 6, 2), new(5, 6, 3), new(5, 6, 4),
+                new(5, 4, 2), new(5, 4, 3), new(5, 4, 4),
             };
 
             // Act
             NeighbourColumnSearch.TryFindStandingTile(Resource, maxDepthBelow: 1, probe, out _, out _);
 
             // Assert
-            Assert.HasCount(8, queried, "Should probe each candidate exactly once.");
+            Assert.HasCount(12, queried, "Should probe each candidate exactly once.");
             CollectionAssert.AreEquivalent(expected.ToList(), queried);
         }
 
         [TestMethod]
-        public void TryFindStandingTile_NeverProbesAboveTheWorker_Diagonals_OrBeyondMaxDepth()
+        public void TryFindStandingTile_NeverReachesMoreThanOneLevelUp_NorBeyondMaxDepth_NorDiagonally()
         {
             // Arrange
             var (probe, queried) = MakeProbe(new Dictionary<TileCoord, float>());
@@ -168,7 +185,7 @@ namespace LedgeLogging.Reachability.Tests
                 var dy = Math.Abs(t.Y - Resource.Y);
                 var dz = t.Z - Resource.Z;
                 Assert.AreEqual(1, dx + dy, $"{t} is not an orthogonal neighbour column of the resource.");
-                Assert.IsGreaterThanOrEqualTo(0, dz, $"{t} is above the worker (negative dz) — upward reach is not allowed.");
+                Assert.IsGreaterThanOrEqualTo(-1, dz, $"{t} reaches more than one level up — upward reach is fixed at one.");
                 Assert.IsLessThanOrEqualTo(maxDepthBelow, dz, $"{t} is deeper than maxDepthBelow.");
             }
         }
@@ -189,17 +206,18 @@ namespace LedgeLogging.Reachability.Tests
         }
 
         [TestMethod]
-        public void TryFindStandingTile_WithZeroMaxDepth_ProbesOnlyTheResourceLevel()
+        public void TryFindStandingTile_WithZeroMaxDepth_StillProbesTheUpReachAndLevel()
         {
-            // Arrange
+            // Arrange — maxDepthBelow 0 → no downward reach, but the fixed up reach (dz -1) and
+            // the resource level (dz 0) remain: 4 columns x 2 levels = 8 candidates, z in {2, 3}.
             var (probe, queried) = MakeProbe(new Dictionary<TileCoord, float>());
 
             // Act
             NeighbourColumnSearch.TryFindStandingTile(Resource, maxDepthBelow: 0, probe, out _, out _);
 
-            // Assert — 4 columns, only dz = 0.
-            Assert.HasCount(4, queried);
-            Assert.IsTrue(queried.All(t => t.Z == Resource.Z));
+            // Assert
+            Assert.HasCount(8, queried);
+            Assert.IsTrue(queried.All(t => t.Z == Resource.Z || t.Z == Resource.Z - 1));
         }
 
         #endregion
@@ -207,21 +225,21 @@ namespace LedgeLogging.Reachability.Tests
         #region Determinism
 
         [TestMethod]
-        public void TryFindStandingTile_OnEqualDistance_PrefersTheShallowerStance()
+        public void TryFindStandingTile_OnEqualDistance_PrefersTheLevelStance()
         {
-            // Arrange — same column, equal distance, one tile level with the resource and one above.
+            // Arrange — same column, equal distance, one level with the resource, one up, one down.
             var sameLevel = new TileCoord(6, 5, 3);
-            var above = new TileCoord(6, 5, 4);
             var (probe, _) = MakeProbe(new Dictionary<TileCoord, float>
             {
                 [sameLevel] = 5f,
-                [above] = 5f,
+                [new TileCoord(6, 5, 2)] = 5f, // up reach
+                [new TileCoord(6, 5, 4)] = 5f, // down reach
             });
 
             // Act
             var found = NeighbourColumnSearch.TryFindStandingTile(Resource, maxDepthBelow: 2, probe, out var tile, out _);
 
-            // Assert — deterministic: the shallower (resource-level) stance wins the tie.
+            // Assert — deterministic: the level stance wins the tie (probed first).
             Assert.IsTrue(found);
             Assert.AreEqual(sameLevel, tile);
         }

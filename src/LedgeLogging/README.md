@@ -6,12 +6,13 @@ assembly) and deploys, with `manifest.json`, to the local Mods folder.
 ## Purpose
 
 Let a worker **clear/remove** (demolish) a natural resource — tree or plant —
-marked for destruction on an orthogonally-adjacent column that sits **below** the
-worker's standing tile (the worker reaches *down* across the ledge). Vanilla forbids
-this because the resource's tile isn't reachable on the navmesh, so the resource shows
-as "unreachable" and is never cleared. The mod extends the worker's *reach* (stand on a
-neighbour tile and clear across the ledge), not the navmesh itself. How many levels below
-is a player setting (`{1, 2, 3, Any}`, default `Any`) — see `Settings/`.
+marked for destruction on an orthogonally-adjacent column one level **above** or some
+levels **below** the worker's standing tile (the worker reaches across the ledge). Vanilla
+forbids this because the resource's tile isn't reachable on the navmesh, so the resource
+shows as "unreachable" and is never cleared. The mod extends the worker's *reach* (stand on
+a neighbour tile and clear across the ledge), not the navmesh itself. The upward reach is
+fixed at one level; how many levels **below** is a player setting (`{1, 2, 3, Any}`, default
+`1`, which reproduces the original ±1) — see `Settings/`.
 
 ## Key types
 
