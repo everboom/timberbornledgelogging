@@ -6,7 +6,7 @@ levels below, the tile a worker can actually stand on.
 
 ## The problem it solves
 
-When you mark a tree or plant with the **Clear / Delete** tool, a worker only goes
+When you mark a tree or plant with the **Mark for Destruction** tool, a worker only goes
 to remove it if they can *path all the way to the resource's own tile*. A single
 1-block step up or down a cliff is impassable in Timberborn, so a tree perched on a
 ledge — right next to a beaver, but one level up or down — is reported
@@ -44,7 +44,7 @@ launch. Make sure you're also subscribed to its required mods (above).
 
 ## Using it
 
-Just play as normal: use the **Clear / Delete** tool to mark a tree or plant on a
+Just play as normal: use the **Mark for Destruction** tool to mark a tree or plant on a
 ledge. Where vanilla would show *"unreachable"* and leave it standing, a worker now
 walks to an adjacent tile and clears it across the ledge.
 
@@ -69,8 +69,8 @@ This is the same off-road terrain pathing vanilla uses for any natural-resource
 removal, so it's accepted as base-game behaviour rather than worked around.
 
 > **About the name:** "Logging" is a historical misnomer — the mod started life
-> scoped to lumberjack cutting, but it's really about **removal via the Clear/Delete
-> tool**. The id (`SylvanGames.LedgeLogging`) is kept for compatibility.
+> scoped to lumberjack cutting, but it's really about **removal via the Mark for
+> Destruction tool**. The id (`SylvanGames.LedgeLogging`) is kept for compatibility.
 
 ## Building from source
 
