@@ -62,12 +62,6 @@ and find the **Ledge Logging** section:
 The setting takes effect on the next reachability check, so you can tune it
 mid-game.
 
-## Known limitation
-
-A worker sent to a ledge tile may path across an *impassable building* to get there.
-This is the same off-road terrain pathing vanilla uses for any natural-resource
-removal, so it's accepted as base-game behaviour rather than worked around.
-
 ## Building from source
 
 Code-only Harmony mod — no Unity assets or SDK round-trip.
