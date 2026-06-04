@@ -1,18 +1,94 @@
 # Ledge Logging
 
-A small Timberborn 1.0 mod: lets lumberjacks cut trees on a neighbouring tile
-**one terrain level above or below** them. Vanilla forbids this because a 1-level
-step is impassable on the terrain navmesh, so a tree at a cliff edge is never
-offered to a lumberjack even when a beaver is standing right beneath (or above) it.
+A small mod for **Timberborn 1.0** that lets your beavers clear trees and plants
+marked for removal even when they sit on a **ledge** — one level above, or a few
+levels below, the tile a worker can actually stand on.
 
-- **Id:** `SylvanGames.LedgeLogging`
-- **Requires:** Harmony (declared in `manifest.json`, not bundled)
-- **Stack:** code-only Harmony mod — no Unity assets, no Unity SDK round-trip.
+## The problem it solves
 
-## Build / deploy
+When you mark a tree or plant with the **Clear / Delete** tool, a worker only goes
+to remove it if they can *path all the way to the resource's own tile*. A single
+1-block step up or down a cliff is impassable in Timberborn, so a tree perched on a
+ledge — right next to a beaver, but one level up or down — is reported
+**"unreachable"** and never gets cleared. You end up unable to tidy up cliff edges,
+terraced ground, or the lip of a dig site without first building stairs or ramps
+just to reach a tree you're about to delete anyway.
 
-- `dotnet build` — builds and post-build-deploys `LedgeLogging.dll` + `manifest.json`
-  to `%USERPROFILE%\Documents\Timberborn\Mods\LedgeLogging\`. Always Release.
+**Ledge Logging** relaxes only the *reach*, not the game's pathfinding: a worker
+walks to a normal, reachable tile on the column **next to** the resource and clears
+it across the ledge. Nothing else about beaver movement changes.
+
+## What it does
+
+- A marked tree/plant is cleared if a worker can stand on an orthogonally-adjacent
+  column that is:
+  - **one level above** the resource — the worker reaches *down* to it, or
+  - **level with** it, or
+  - **one level below** it — the worker reaches *up* to it.
+- The **downward** reach (how many levels *below the worker* a resource may sit) is
+  a setting — see below. The **upward** reach is always fixed at one level.
+- Applies to natural resources only (trees and plants). Buildings and ruins keep
+  vanilla reachability.
+
+## Requirements
+
+These are separate mods that must also be installed (Ledge Logging does **not**
+bundle them):
+
+| Mod | Why |
+| --- | --- |
+| **Harmony** | Runtime patching framework this mod is built on. |
+| **eMka.ModSettings** | Provides the in-game settings panel for the reach setting. |
+
+Both are declared in `manifest.json`, and Timberborn will warn you if they're
+missing.
+
+## Installing
+
+1. Install **Harmony** and **eMka.ModSettings** (via the in-game mod manager / Steam
+   Workshop).
+2. Place `LedgeLogging.dll` and `manifest.json` together in:
+   ```
+   %USERPROFILE%\Documents\Timberborn\Mods\LedgeLogging\
+   ```
+3. Launch Timberborn and enable the mod in the mod manager if needed.
+
+## Using it
+
+Just play as normal: use the **Clear / Delete** tool to mark a tree or plant on a
+ledge. Where vanilla would show *"unreachable"* and leave it standing, a worker now
+walks to an adjacent tile and clears it across the ledge.
+
+### Settings
+
+Open **eMka.ModSettings** (from the main-menu mod list or in-game **Options → Mods**)
+and find the **Ledge Logging** section:
+
+- **Maximum levels below** — `1` / `2` / `3` / `Any` (default **`1`**). How many
+  terrain levels *below a worker* a marked tree or plant may be cleared from.
+  Reaching one level **up** is always allowed regardless, so the default `1`
+  reproduces a symmetric one-level-up / one-level-down reach. `Any` lets a worker
+  clear a resource from any reachable height above it (capped at the map height).
+
+The setting takes effect on the next reachability check, so you can tune it
+mid-game.
+
+## Known limitation
+
+A worker sent to a ledge tile may path across an *impassable building* to get there.
+This is the same off-road terrain pathing vanilla uses for any natural-resource
+removal, so it's accepted as base-game behaviour rather than worked around.
+
+> **About the name:** "Logging" is a historical misnomer — the mod started life
+> scoped to lumberjack cutting, but it's really about **removal via the Clear/Delete
+> tool**. The id (`SylvanGames.LedgeLogging`) is kept for compatibility.
+
+## Building from source
+
+Code-only Harmony mod — no Unity assets or SDK round-trip.
+
+- `dotnet build` — builds and deploys `LedgeLogging.dll` + `manifest.json` to your
+  `Documents\Timberborn\Mods\LedgeLogging\` folder (always Release).
 - `dotnet build -p:LedgeLoggingDeploy=false` — build without deploying.
 - `dotnet test` — runs the unit tests for the pure reachability core. These build
   without a Timberborn install (the test project links the BCL-only source rather
@@ -21,14 +97,18 @@ offered to a lumberjack even when a beaver is standing right beneath (or above) 
 Per-machine paths are not committed. Set `TimberbornInstallDir` via (highest
 precedence first): `-p:TimberbornInstallDir=<path>`, the
 `LEDGELOGGING_TIMBERBORN_DIR` environment variable, or a gitignored
-`Directory.Build.local.props` (copy `Directory.Build.local.props.example`).
-Optional deploy redirect: `LEDGELOGGING_DEPLOY_DIR`.
+`Directory.Build.local.props` (copy `Directory.Build.local.props.example`). The
+`eMka.ModSettings` reference resolves similarly via `ModSettingsDir` /
+`LEDGELOGGING_MODSETTINGS_DIR`. Optional deploy redirect: `LEDGELOGGING_DEPLOY_DIR`.
 
-## Layout
+### Layout
 
 ```
 LedgeLogging.slnx
 ├── src/LedgeLogging                       netstandard2.1 — the mod assembly (AssemblyName=LedgeLogging)
-│   └── Reachability                       BCL-only pure core (the unit-tested standing-tile search)
+│   ├── Reachability                       BCL-only pure core (the unit-tested standing-tile search)
+│   ├── Game                               game-coupled glue (navmesh probes, service locator)
+│   ├── Patches                            the three Harmony patches on the demolish system
+│   └── Settings                           the eMka.ModSettings reach setting
 └── tests/LedgeLogging.Reachability.Tests  MSTest — links and exercises the pure core
 ```
