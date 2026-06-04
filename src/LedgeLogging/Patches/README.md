@@ -27,8 +27,8 @@ load — loud and once — instead of on the first in-game demolish.
 
 | File | Target | Kind | Job |
 |------|--------|------|-----|
-| `DemolishReachabilityPatch` (gate) | `ReachableDemolishable.IsReachable(Accessible, out float)` | Postfix | Accept a natural resource the direct road→terrain path rejected, if a ledge standing tile exists — **and stash that standing tile** for the reacher. |
-| `DemolishReachabilityPatch` (status) | `ReachableDemolishable.IsUnreachable()` | Postfix | Clear the "UnreachableObject" selection status when a ledge neighbour tile is on a district road spill. |
+| `DemolishReachabilityPatch` (gate) | `ReachableDemolishable.IsReachable(Accessible, out float)` | Postfix | Accept a natural resource the direct road→terrain path rejected, if a ledge standing tile exists that is navmesh-reachable **and not a restricted node** — **and stash that standing tile** for the reacher. |
+| `DemolishReachabilityPatch` (status) | `ReachableDemolishable.IsUnreachable()` | Postfix | Clear the "UnreachableObject" selection status when a ledge neighbour tile is on a district road spill **and not a restricted node**. |
 | `UncuttableReacherDestinationPatch` | `UncuttableReacher.Destination` (getter) | Postfix | Route the worker to the stashed standing tile instead of the resource centre. |
 
 The stash happens **in the gate**, not at job assignment: `DemolishJobProvider.GetJob`
@@ -51,16 +51,27 @@ target fails loudly at `PatchAll` time. `ReachableDemolishable` is public, so th
 gate/status patches target it directly by `typeof` (the overloaded `IsReachable` is
 disambiguated by argument types).
 
-## Known limitation: building clip
+## Restricted standing tiles, and the residual clip caveat
 
 The reacher must hand the walker a **built-in** `IDestination` (`PositionDestination`),
 because the game serializes a walker's current destination on save and
 `DestinationValueSerializer` only accepts `PositionDestination`/`AccessibleDestination` — a
 custom destination throws during save. Both built-in destinations pathfind via
-`FindPathUncached`, which for a bare-terrain standing tile can fall back to the terrain
-pathfinder and cut through an impassable building. This is the **same** pathfinding vanilla
-uses to send a worker to an off-road natural resource, so it's an accepted base-game
-limitation, not fixable from a mod without breaking saves. See repo-root `CLAUDE.md`.
+`FindPathUncached`, whose terrain fallback ignores building obstacles.
+
+**Restricted-node gate (the fix).** Both `ReachableDemolishable` probes reject a candidate
+standing tile that is a **restricted navmesh node** (`RestrictedNodeMap.IsNodeRestricted` via
+`NodeIdService.GridToId`, in `../Game/NavMeshServiceLocator`). Without it a worker would route
+to an enterable building's entrance, walk *inside*, and clear the resource from there, with the
+"unreachable" status wrongly suppressed. Restricted nodes are vanilla's own "walkable through,
+not a valid work destination" signal; reaching them requires publicizing `Timberborn.Navigation`
+(see repo-root `CLAUDE.md`).
+
+**Residual, accepted.** The built-in destination still pathfinds with the building-unaware
+terrain fallback, so a worker routed to a *bare-terrain* standing tile could clip across a
+building footprint en route to it. This is the **same** pathfinding vanilla uses to send a
+worker to an off-road natural resource, so it's an accepted base-game limitation, not fixable
+from a mod without breaking saves. See repo-root `CLAUDE.md`.
 
 ## How they cooperate
 
