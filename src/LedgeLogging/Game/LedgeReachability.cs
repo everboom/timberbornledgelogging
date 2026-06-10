@@ -49,11 +49,7 @@ namespace LedgeLogging.Game
             {
                 candidateDistance = 0f;
                 var coordinates = new Vector3Int(tile.X, tile.Y, tile.Z);
-                var onNavMesh = navMesh.IsOnNavMesh(coordinates);
-                // Reject tiles a worker may path through but not stand on as a destination
-                // (e.g. inside a building) — vanilla forbids standing there to do work.
-                var restricted = onNavMesh && NavMeshServiceLocator.IsRestricted(coordinates);
-                return onNavMesh && !restricted
+                return navMesh.IsOnNavMesh(coordinates)
                     && start.FindRoadToTerrainPath(CoordinateSystem.GridToWorldCentered(coordinates), out candidateDistance);
             };
 
@@ -80,11 +76,7 @@ namespace LedgeLogging.Game
             {
                 candidateDistance = 0f;
                 var coordinates = new Vector3Int(tile.X, tile.Y, tile.Z);
-                var onNavMesh = navMesh.IsOnNavMesh(coordinates);
-                // Same restriction gate as the worker-specific probe: a tile inside a building is
-                // pass-through only, never a standing destination, so it must not clear the status.
-                var restricted = onNavMesh && NavMeshServiceLocator.IsRestricted(coordinates);
-                return onNavMesh && !restricted
+                return navMesh.IsOnNavMesh(coordinates)
                     && districts.IsOnInstantDistrictRoadSpill(CoordinateSystem.GridToWorldCentered(coordinates));
             };
 

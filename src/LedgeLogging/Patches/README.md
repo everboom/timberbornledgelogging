@@ -27,8 +27,8 @@ load — loud and once — instead of on the first in-game demolish.
 
 | File | Target | Kind | Job |
 |------|--------|------|-----|
-| `DemolishReachabilityPatch` (gate) | `ReachableDemolishable.IsReachable(Accessible, out float)` | Postfix | Accept a natural resource the direct road→terrain path rejected, if a ledge standing tile exists that is navmesh-reachable **and not a restricted node** — **and stash that standing tile** for the reacher. |
-| `DemolishReachabilityPatch` (status) | `ReachableDemolishable.IsUnreachable()` | Postfix | Clear the "UnreachableObject" selection status when a ledge neighbour tile is on a district road spill **and not a restricted node**. |
+| `DemolishReachabilityPatch` (gate) | `ReachableDemolishable.IsReachable(Accessible, out float)` | Postfix | Accept a natural resource the direct road→terrain path rejected, if a ledge standing tile exists that is navmesh-reachable — **and stash that standing tile** for the reacher. |
+| `DemolishReachabilityPatch` (status) | `ReachableDemolishable.IsUnreachable()` | Postfix | Clear the "UnreachableObject" selection status when a ledge neighbour tile is on a district road spill. |
 | `UncuttableReacherDestinationPatch` | `UncuttableReacher.Destination` (getter) | Postfix | Route the worker to the stashed standing tile instead of the resource centre. |
 
 The stash happens **in the gate**, not at job assignment: `DemolishJobProvider.GetJob`
@@ -51,7 +51,7 @@ target fails loudly at `PatchAll` time. `ReachableDemolishable` is public, so th
 gate/status patches target it directly by `typeof` (the overloaded `IsReachable` is
 disambiguated by argument types).
 
-## Restricted standing tiles, and the residual clip caveat
+## Standing-tile destination, and the clip behaviour
 
 The reacher must hand the walker a **built-in** `IDestination` (`PositionDestination`),
 because the game serializes a walker's current destination on save and
@@ -59,19 +59,17 @@ because the game serializes a walker's current destination on save and
 custom destination throws during save. Both built-in destinations pathfind via
 `FindPathUncached`, whose terrain fallback ignores building obstacles.
 
-**Restricted-node gate (the fix).** Both `ReachableDemolishable` probes reject a candidate
-standing tile that is a **restricted navmesh node** (`RestrictedNodeMap.IsNodeRestricted` via
-`NodeIdService.GridToId`, in `../Game/NavMeshServiceLocator`). Without it a worker would route
-to an enterable building's entrance, walk *inside*, and clear the resource from there, with the
-"unreachable" status wrongly suppressed. Restricted nodes are vanilla's own "walkable through,
-not a valid work destination" signal; reaching them requires publicizing `Timberborn.Navigation`
-(see repo-root `CLAUDE.md`).
+**Pass-through buildings are allowed.** The standing-tile search accepts any navmesh-reachable
+neighbour, including a "restricted" navmesh node — a tile a worker may path *through* but that
+vanilla would not pick as a work destination (e.g. inside a building). So a worker may route to
+a building's entrance, walk *inside*, and clear the resource from there; the "unreachable" status
+is cleared to match. An earlier build rejected restricted nodes via `RestrictedNodeMap`; that gate
+was removed by request, along with the `Timberborn.Navigation` publicize it required.
 
-**Residual, accepted.** The built-in destination still pathfinds with the building-unaware
-terrain fallback, so a worker routed to a *bare-terrain* standing tile could clip across a
+**Terrain-clip residual.** Because the built-in destination pathfinds with the building-unaware
+terrain fallback, a worker routed to a *bare-terrain* standing tile can also clip across a
 building footprint en route to it. This is the **same** pathfinding vanilla uses to send a
-worker to an off-road natural resource, so it's an accepted base-game limitation, not fixable
-from a mod without breaking saves. See repo-root `CLAUDE.md`.
+worker to an off-road natural resource — an accepted base-game limitation. See repo-root `CLAUDE.md`.
 
 ## How they cooperate
 

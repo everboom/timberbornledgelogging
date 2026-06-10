@@ -1,6 +1,6 @@
 {
   "Name": "Ledge Logging",
-  "Version": "0.1.0.0",
+  "Version": "0.2.0.0",
   "Id": "SylvanGames.LedgeLogging",
   "MinimumGameVersion": "1.0.0.0",
   "Description": "Lets workers clear trees and plants marked for removal on a neighbouring tile one level above or below them, without requiring a path up the cliff.",
